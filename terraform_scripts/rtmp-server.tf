@@ -1,3 +1,7 @@
+resource "digitalocean_reserved_ip" "rtmp_server_ip" {
+  region = local.config.region
+}
+
 resource "digitalocean_droplet" "rtmp_server" {
   image  = local.config.image
   name   = local.config.droplet_name
@@ -7,6 +11,8 @@ resource "digitalocean_droplet" "rtmp_server" {
   ssh_keys = [
     digitalocean_ssh_key.terraform.id
   ]
+
+  reserved_ip_address = digitalocean_reserved_ip.rtmp_server_ip.ip_address
 
   connection {
     host = self.ipv4_address
@@ -29,20 +35,14 @@ resource "digitalocean_droplet" "rtmp_server" {
   }
 }
 
-# resource "digitalocean_domain" "rtmp_domain" {
-#   name       = local.config.domain
-# }
-# 
-# resource "digitalocean_record" "rtmp_record" {
-#   domain = digitalocean_domain.rtmp_domain.name
-#   type   = "A"
-#   name   = "@"
-#   value  = digitalocean_droplet.rtmp_server.ipv4_address
-# }
-# 
-# resource "digitalocean_record" "www_record" {
-#   domain = digitalocean_domain.rtmp_domain.name
-#   type   = "A"
-#   name   = "www"
-#   value  = digitalocean_droplet.rtmp_server.ipv4_address
-# }
+resource "digitalocean_domain" "rtmp_domain" {
+  name       = local.config.domain
+}
+
+resource "digitalocean_record" "rtmp_record" {
+  domain = digitalocean_domain.rtmp_domain.name
+  type   = "A"
+  name   = "@"
+  value  = digitalocean_reserved_ip.rtmp_server_ip.ip_address
+  ttl    = 45
+}

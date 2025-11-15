@@ -3,7 +3,7 @@ output "droplet_ip" {
   value       = digitalocean_droplet.rtmp_server.ipv4_address
 }
 
-# output "domain_name" {
-#   description = "The domain name pointing to the droplet"
-#   value       = digitalocean_domain.rtmp_domain.name
-# }
+output "domain_name" {
+  description = "The domain name pointing to the droplet"
+  value       = digitalocean_domain.rtmp_domain.name
+}

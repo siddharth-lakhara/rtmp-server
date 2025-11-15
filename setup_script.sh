@@ -39,33 +39,10 @@ EOF
 sudo tee /etc/nginx/sites-available/rtmpserver > /dev/null <<EOF
 server {
     listen 80;
+    server_name rtmp.slakhara.com;
     
     location /.well-known/acme-challenge/ {
         root /var/www/certbot;
-    }
-
-    location / {
-        return 301 https://\$host\$request_uri;
-    }
-}
-
-server {
-    listen 443 ssl;
-    
-    # Self-signed certificate for IP address
-    ssl_certificate /etc/ssl/certs/nginx-selfsigned.crt;
-    ssl_certificate_key /etc/ssl/private/nginx-selfsigned.key;
-    
-    location / {
-        add_header Cache-Control no-cache;
-        add_header Access-Control-Allow-Origin *;
-
-        types {
-            application/vnd.apple.mpegurl m3u8;
-            video/mp2t ts;
-        }
-
-        root /var/www/html/hls;
     }
     
     location /hls {
@@ -94,11 +71,12 @@ EOF
 sudo mkdir -p /var/www/html/hls
 sudo mkdir -p /var/www/certbot
 
-# Generate self-signed certificate for IP address
-sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-    -keyout /etc/ssl/private/nginx-selfsigned.key \
-    -out /etc/ssl/certs/nginx-selfsigned.crt \
-    -subj "/CN=localhost"
+# Start Nginx service
+sudo systemctl start nginx
+sudo systemctl enable nginx
+
+# Obtain Let's Encrypt certificate
+sudo certbot --nginx -d rtmp.slakhara.com --non-interactive --agree-tos --email admin@slakhara.com
 
 # firewall settings
 sudo ufw allow 1935/tcp
