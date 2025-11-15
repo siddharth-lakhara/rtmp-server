@@ -29,3 +29,20 @@ resource "digitalocean_droplet" "rtmp_server" {
   }
 }
 
+# resource "digitalocean_domain" "rtmp_domain" {
+#   name       = local.config.domain
+# }
+# 
+# resource "digitalocean_record" "rtmp_record" {
+#   domain = digitalocean_domain.rtmp_domain.name
+#   type   = "A"
+#   name   = "@"
+#   value  = digitalocean_droplet.rtmp_server.ipv4_address
+# }
+# 
+# resource "digitalocean_record" "www_record" {
+#   domain = digitalocean_domain.rtmp_domain.name
+#   type   = "A"
+#   name   = "www"
+#   value  = digitalocean_droplet.rtmp_server.ipv4_address
+# }
