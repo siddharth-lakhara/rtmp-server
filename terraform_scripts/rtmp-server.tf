@@ -16,7 +16,16 @@ resource "digitalocean_droplet" "rtmp_server" {
     timeout = "2m"
   }
   
+  provisioner "file" {
+    source      = "${path.module}/../setup_script.sh"
+    destination = "/tmp/setup_script.sh"
+  }
+
   provisioner "remote-exec" {
-    
+    inline = [
+      "chmod +x /tmp/setup_script.sh",
+      "/tmp/setup_script.sh"
+    ]
   }
 }
+
