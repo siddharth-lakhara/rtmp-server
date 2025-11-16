@@ -21,7 +21,7 @@ resource "digitalocean_droplet" "rtmp_server" {
   }
   
   provisioner "file" {
-    source      = "${path.module}/../setup_script.sh"
+    source      = "${path.module}/setup_script.sh"
     destination = "/tmp/setup_script.sh"
   }
 
