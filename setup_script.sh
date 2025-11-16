@@ -61,25 +61,50 @@ EOF
 sudo rm -f /etc/nginx/sites-enabled/default
 sudo ln -sf /etc/nginx/sites-available/rtmpserver /etc/nginx/sites-enabled/
 
+# Create directory for HLS
+sudo mkdir -p /var/www/html/hls
+sudo mkdir -p /var/www/certbot
+
+# firewall settings
+sudo ufw allow 22/tcp
+sudo ufw allow 1935/tcp
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+sudo ufw --force enable
+
 # Include RTMP config in main nginx config
 sudo tee -a /etc/nginx/nginx.conf > /dev/null <<EOF
 
 include /etc/nginx/rtmp.conf;
 EOF
 
-# Create directory for HLS
-sudo mkdir -p /var/www/html/hls
-sudo mkdir -p /var/www/certbot
-
 # Start Nginx service
 sudo systemctl start nginx
 sudo systemctl enable nginx
 
-# Obtain Let's Encrypt certificate
-sudo certbot --nginx -d rtmp.slakhara.com --non-interactive --agree-tos --email admin@slakhara.com
+# Function to obtain Let's Encrypt certificate with retry
+obtain_certificate() {
+    local max_attempts=5
+    local attempt=1
+    
+    while [ $attempt -le $max_attempts ]; do
+        echo "Attempt $attempt of $max_attempts to obtain Let's Encrypt certificate..."
+        if sudo certbot --nginx -d rtmp.slakhara.com --non-interactive --agree-tos --email admin@slakhara.com; then
+            echo "Successfully obtained Let's Encrypt certificate"
+            return 0
+        else
+            echo "Failed to obtain certificate, waiting 30 seconds before retry..."
+            sleep 30
+            attempt=$((attempt + 1))
+        fi
+    done
+    
+    echo "Failed to obtain Let's Encrypt certificate after $max_attempts attempts"
+    echo "Exiting setup script"
+    exit 1
+}
 
-# firewall settings
-sudo ufw allow 1935/tcp
-sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
+# Obtain Let's Encrypt certificate
+# obtain_certificate
+
 sudo systemctl reload nginx.service

@@ -12,8 +12,6 @@ resource "digitalocean_droplet" "rtmp_server" {
     digitalocean_ssh_key.terraform.id
   ]
 
-  reserved_ip_address = digitalocean_reserved_ip.rtmp_server_ip.ip_address
-
   connection {
     host = self.ipv4_address
     user = "root"
@@ -33,6 +31,11 @@ resource "digitalocean_droplet" "rtmp_server" {
       "/tmp/setup_script.sh"
     ]
   }
+}
+
+resource "digitalocean_reserved_ip_assignment" "rtmp_server_ip_assignment" {
+  ip_address = digitalocean_reserved_ip.rtmp_server_ip.ip_address
+  droplet_id = digitalocean_droplet.rtmp_server.id
 }
 
 resource "digitalocean_domain" "rtmp_domain" {
