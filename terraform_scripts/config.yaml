@@ -3,3 +3,4 @@ region: "blr1"
 size: "s-1vcpu-1gb"
 image: "ubuntu-22-04-x64"
 domain: "rtmp.slakhara.com"
+cert_path: /etc/letsencrypt/live/

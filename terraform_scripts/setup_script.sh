@@ -6,6 +6,19 @@ sudo apt install -y nginx
 sudo apt install -y libnginx-mod-rtmp
 sudo apt install -y certbot python3-certbot-nginx
 
+# Create directory for certificates
+sudo mkdir -p /etc/nginx/ssl
+
+# Copy certificates to the droplet
+sudo cp /tmp/cert.pem /etc/nginx/ssl/
+sudo cp /tmp/privkey.pem /etc/nginx/ssl/
+sudo cp /tmp/fullchain.pem /etc/nginx/ssl/
+
+# Set proper permissions for certificates
+sudo chmod 600 /etc/nginx/ssl/privkey.pem
+sudo chmod 644 /etc/nginx/ssl/cert.pem
+sudo chmod 644 /etc/nginx/ssl/fullchain.pem
+
 # Create RTMP configuration
 sudo tee /etc/nginx/rtmp.conf > /dev/null <<EOF
 rtmp {
@@ -44,13 +57,12 @@ EOF
 # Create site configuration
 sudo tee /etc/nginx/sites-available/rtmpserver > /dev/null <<EOF
 server {
-    listen 80;
     server_name rtmp.slakhara.com;
-    
+
     location /.well-known/acme-challenge/ {
         root /var/www/certbot;
     }
-    
+
     location /stream/hls {
         types {
             application/vnd.apple.mpegurl m3u8;
@@ -60,7 +72,7 @@ server {
         add_header Cache-Control no-cache;
         add_header Access-Control-Allow-Origin *;
     }
-    
+
     location /stream/dash {
         types {
             application/dash+xml mpd;
@@ -70,12 +82,29 @@ server {
         add_header Cache-Control no-cache;
         add_header Access-Control-Allow-Origin *;
     }
-    
+
     location /show/hls {
         root /var/www/html/player;
         index hls_player.html;
         try_files \$uri \$uri/ =404;
     }
+
+    listen 443 ssl;
+    ssl_certificate /etc/nginx/ssl/fullchain.pem;
+    ssl_certificate_key /etc/nginx/ssl/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+
+}
+
+server {
+    if (\$host = rtmp.slakhara.com) {
+        return 301 https://\$host\$request_uri;
+    }
+
+    listen 80;
+    server_name rtmp.slakhara.com;
+    return 404;
 }
 EOF
 
@@ -106,29 +135,7 @@ EOF
 sudo systemctl start nginx
 sudo systemctl enable nginx
 
-# Function to obtain Let's Encrypt certificate with retry
-obtain_certificate() {
-    local max_attempts=5
-    local attempt=1
-    
-    while [ $attempt -le $max_attempts ]; do
-        echo "Attempt $attempt of $max_attempts to obtain Let's Encrypt certificate..."
-        if sudo certbot --nginx -d rtmp.slakhara.com --non-interactive --agree-tos --email admin@slakhara.com; then
-            echo "Successfully obtained Let's Encrypt certificate"
-            return 0
-        else
-            echo "Failed to obtain certificate, waiting 30 seconds before retry..."
-            sleep 30
-            attempt=$((attempt + 1))
-        fi
-    done
-    
-    echo "Failed to obtain Let's Encrypt certificate after $max_attempts attempts"
-    echo "Exiting setup script"
-    exit 1
-}
-
-# Obtain Let's Encrypt certificate
-# obtain_certificate
+# Obtain cert
+# sudo certbot --nginx -d rtmp.slakhara.com --non-interactive --agree-tos --email admin@slakhara.com
 
 sudo systemctl reload nginx.service

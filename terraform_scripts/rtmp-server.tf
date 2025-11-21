@@ -30,6 +30,21 @@ resource "digitalocean_droplet" "rtmp_server" {
     destination = "/tmp/hls_player.html"
   }
 
+  provisioner "file" {
+    source      = "${path.module}/../cert/rtmp.slakhara.com/cert.pem"
+    destination = "/tmp/cert.pem"
+  }
+
+  provisioner "file" {
+    source      = "${path.module}/../cert/rtmp.slakhara.com/privkey.pem"
+    destination = "/tmp/privkey.pem"
+  }
+
+  provisioner "file" {
+    source      = "${path.module}/../cert/rtmp.slakhara.com/fullchain.pem"
+    destination = "/tmp/fullchain.pem"
+  }
+
   provisioner "remote-exec" {
     inline = [
       "chmod +x /tmp/setup_script.sh",
@@ -55,4 +70,12 @@ resource "digitalocean_record" "rtmp_record" {
   name   = "@"
   value  = digitalocean_reserved_ip.rtmp_server_ip.ip_address
   ttl    = 45
+}
+
+resource "digitalocean_certificate" "cert" {
+  name              = "custom-terraform-example"
+  type              = "custom"
+  private_key       = file("${path.module}/../cert/rtmp.slakhara.com/privkey.pem")
+  leaf_certificate  = file("${path.module}/../cert/rtmp.slakhara.com/cert.pem")
+  certificate_chain = file("${path.module}/../cert/rtmp.slakhara.com/fullchain.pem")
 }
