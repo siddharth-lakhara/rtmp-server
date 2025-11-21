@@ -21,7 +21,7 @@ rtmp {
 
             # HLS settings
             hls on;
-            hls_path /var/www/html/hls;
+            hls_path /var/www/html/stream/hls;
             hls_fragment 3;
             hls_playlist_length 60;
             
@@ -29,6 +29,12 @@ rtmp {
             hls_variant _low BANDWIDTH=288000;
             hls_variant _mid BANDWIDTH=448000;
             hls_variant _high BANDWIDTH=1152000;
+            
+            # DASH settings
+            dash on;
+            dash_path /var/www/html/stream/dash;
+            dash_fragment 3;
+            dash_playlist_length 60;
         }
 
     }
@@ -45,14 +51,30 @@ server {
         root /var/www/certbot;
     }
     
-    location /hls {
+    location /stream/hls {
         types {
             application/vnd.apple.mpegurl m3u8;
             video/mp2t ts;
         }
-        root /var/www/html;
+        root /var/www/html/stream;
         add_header Cache-Control no-cache;
         add_header Access-Control-Allow-Origin *;
+    }
+    
+    location /stream/dash {
+        types {
+            application/dash+xml mpd;
+            video/mp4 mp4;
+        }
+        root /var/www/html/stream;
+        add_header Cache-Control no-cache;
+        add_header Access-Control-Allow-Origin *;
+    }
+    
+    location /show/hls {
+        root /var/www/html/player;
+        index hls_player.html;
+        try_files \$uri \$uri/ =404;
     }
 }
 EOF
@@ -62,7 +84,9 @@ sudo rm -f /etc/nginx/sites-enabled/default
 sudo ln -sf /etc/nginx/sites-available/rtmpserver /etc/nginx/sites-enabled/
 
 # Create directory for HLS
-sudo mkdir -p /var/www/html/hls
+sudo mkdir -p /var/www/html/stream/hls
+sudo mkdir -p /var/www/html/stream/dash
+sudo mkdir -p /var/www/html/player
 sudo mkdir -p /var/www/certbot
 
 # firewall settings

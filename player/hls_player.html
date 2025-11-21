@@ -1,0 +1,35 @@
+<html>
+
+<head>
+  <script src="//cdn.jsdelivr.net/npm/hls.js@latest"></script>
+</head>
+
+<body>
+  <video id="video" controls style="width: 100%; height: auto;"></video>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const video = document.getElementById('video');
+      // Get the stream name from URL parameter or use default
+      const urlParams = new URLSearchParams(window.location.search);
+      const streamName = urlParams.get('stream') || 'live';
+      const videoSrc = `/stream/hls/${streamName}.m3u8`;
+      
+      if (Hls.isSupported()) {
+        const hls = new Hls();
+        hls.loadSource(videoSrc);
+        hls.attachMedia(video);
+        hls.on(Hls.Events.MANIFEST_PARSED, function() {
+          video.play();
+        });
+      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        // For Safari
+        video.src = videoSrc;
+        video.addEventListener('loadedmetadata', function() {
+          video.play();
+        });
+      }
+    });
+  </script>
+</body>
+
+</html>

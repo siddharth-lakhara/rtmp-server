@@ -24,11 +24,18 @@ resource "digitalocean_droplet" "rtmp_server" {
     source      = "${path.module}/setup_script.sh"
     destination = "/tmp/setup_script.sh"
   }
+  
+  provisioner "file" {
+    source      = "${path.module}/../player/hls_player.html"
+    destination = "/tmp/hls_player.html"
+  }
 
   provisioner "remote-exec" {
     inline = [
       "chmod +x /tmp/setup_script.sh",
-      "/tmp/setup_script.sh"
+      "/tmp/setup_script.sh",
+      "mkdir -p /var/www/html/player",
+      "cp /tmp/hls_player.html /var/www/html/player/"
     ]
   }
 }
