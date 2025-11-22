@@ -57,6 +57,7 @@ EOF
 # Create site configuration
 sudo tee /etc/nginx/sites-available/rtmpserver > /dev/null <<EOF
 server {
+    listen 80;
     server_name rtmp.slakhara.com;
 
     location /.well-known/acme-challenge/ {
@@ -68,7 +69,7 @@ server {
             application/vnd.apple.mpegurl m3u8;
             video/mp2t ts;
         }
-        root /var/www/html/stream;
+        root /var/www/html;
         add_header Cache-Control no-cache;
         add_header Access-Control-Allow-Origin *;
     }
@@ -78,7 +79,7 @@ server {
             application/dash+xml mpd;
             video/mp4 mp4;
         }
-        root /var/www/html/stream;
+        root /var/www/html;
         add_header Cache-Control no-cache;
         add_header Access-Control-Allow-Origin *;
     }
@@ -89,22 +90,13 @@ server {
         try_files \$uri \$uri/ =404;
     }
 
-    listen 443 ssl;
-    ssl_certificate /etc/nginx/ssl/fullchain.pem;
-    ssl_certificate_key /etc/nginx/ssl/privkey.pem;
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers HIGH:!aNULL:!MD5;
+    # disabling till the time we move to custom ssl certs
+    # listen 443 ssl;
+    # ssl_certificate /etc/nginx/ssl/fullchain.pem;
+    # ssl_certificate_key /etc/nginx/ssl/privkey.pem;
+    # ssl_protocols TLSv1.2 TLSv1.3;
+    # ssl_ciphers HIGH:!aNULL:!MD5;
 
-}
-
-server {
-    if (\$host = rtmp.slakhara.com) {
-        return 301 https://\$host\$request_uri;
-    }
-
-    listen 80;
-    server_name rtmp.slakhara.com;
-    return 404;
 }
 EOF
 

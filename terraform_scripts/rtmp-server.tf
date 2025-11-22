@@ -30,27 +30,27 @@ resource "digitalocean_droplet" "rtmp_server" {
     destination = "/tmp/hls_player.html"
   }
 
-  provisioner "file" {
-    source      = "${path.module}/../cert/rtmp.slakhara.com/cert.pem"
-    destination = "/tmp/cert.pem"
-  }
+  # provisioner "file" {
+  #   source      = "${path.module}/../cert/rtmp.slakhara.com/cert.pem"
+  #   destination = "/tmp/cert.pem"
+  # }
 
-  provisioner "file" {
-    source      = "${path.module}/../cert/rtmp.slakhara.com/privkey.pem"
-    destination = "/tmp/privkey.pem"
-  }
+  # provisioner "file" {
+  #   source      = "${path.module}/../cert/rtmp.slakhara.com/privkey.pem"
+  #   destination = "/tmp/privkey.pem"
+  # }
 
-  provisioner "file" {
-    source      = "${path.module}/../cert/rtmp.slakhara.com/fullchain.pem"
-    destination = "/tmp/fullchain.pem"
-  }
+  # provisioner "file" {
+  #   source      = "${path.module}/../cert/rtmp.slakhara.com/fullchain.pem"
+  #   destination = "/tmp/fullchain.pem"
+  # }
 
   provisioner "remote-exec" {
     inline = [
-      "chmod +x /tmp/setup_script.sh",
-      "/tmp/setup_script.sh",
       "mkdir -p /var/www/html/player",
-      "cp /tmp/hls_player.html /var/www/html/player/"
+      "cp /tmp/hls_player.html /var/www/html/player/",
+      "chmod +x /tmp/setup_script.sh",
+      "/tmp/setup_script.sh"
     ]
   }
 }
@@ -72,10 +72,32 @@ resource "digitalocean_record" "rtmp_record" {
   ttl    = 45
 }
 
-resource "digitalocean_certificate" "cert" {
-  name              = "custom-terraform-example"
-  type              = "custom"
-  private_key       = file("${path.module}/../cert/rtmp.slakhara.com/privkey.pem")
-  leaf_certificate  = file("${path.module}/../cert/rtmp.slakhara.com/cert.pem")
-  certificate_chain = file("${path.module}/../cert/rtmp.slakhara.com/fullchain.pem")
-}
+# resource "digitalocean_certificate" "custom_cert" {
+#   name              = "rtmp-slakhara-com-custom-cert"
+#   type              = "custom"
+#   private_key       = file("${path.module}/../cert/rtmp.slakhara.com/privkey.pem")
+#   leaf_certificate  = file("${path.module}/../cert/rtmp.slakhara.com/cert.pem")
+#   certificate_chain = file("${path.module}/../cert/rtmp.slakhara.com/fullchain.pem")
+# }
+
+# resource "digitalocean_loadbalancer" "public_lb" {
+#   name   = "my-rtmp-loadbalancer"
+#   region = "nyc3" # Replace with your region
+  
+#   # ... other loadbalancer config
+
+#   forwarding_rule {
+#     entry_port      = 443
+#     entry_protocol  = "https"
+#     target_port     = 80 # Or 443 if Nginx handles TLS passthrough
+#     target_protocol = "http" # Or "https" for end-to-end encryption
+    
+#     # *** Reference the custom certificate ID here ***
+#     certificate_id  = digitalocean_certificate.custom_cert.id
+#   }
+  
+#   # Forward HTTP to HTTPS (optional but recommended)
+#   redirect_http_to_https = true
+  
+#   # ... other loadbalancer config
+# }
