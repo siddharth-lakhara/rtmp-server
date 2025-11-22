@@ -4,7 +4,6 @@ export PATH=$PATH:/usr/bin
 sudo apt update
 sudo apt install -y nginx
 sudo apt install -y libnginx-mod-rtmp
-sudo apt install -y certbot python3-certbot-nginx
 
 # Create directory for certificates
 sudo mkdir -p /etc/nginx/ssl
@@ -59,10 +58,20 @@ sudo tee /etc/nginx/sites-available/rtmpserver > /dev/null <<EOF
 server {
     listen 80;
     server_name rtmp.slakhara.com;
+    return 301 https://\$server_name\$request_uri;
+}
 
-    location /.well-known/acme-challenge/ {
-        root /var/www/certbot;
-    }
+server {
+    listen 443 ssl;
+    server_name rtmp.slakhara.com;
+
+    ssl_certificate     /etc/nginx/ssl/fullchain.pem;
+    ssl_certificate_key /etc/nginx/ssl/privkey.pem;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;
+    ssl_prefer_server_ciphers off;
+
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
 
     location /stream/hls {
         types {
@@ -84,19 +93,11 @@ server {
         add_header Access-Control-Allow-Origin *;
     }
 
-    location /show/hls {
-        root /var/www/html/player;
+    location /show/hls/ {
+        alias /var/www/html/player/;
         index hls_player.html;
         try_files \$uri \$uri/ =404;
     }
-
-    # disabling till the time we move to custom ssl certs
-    # listen 443 ssl;
-    # ssl_certificate /etc/nginx/ssl/fullchain.pem;
-    # ssl_certificate_key /etc/nginx/ssl/privkey.pem;
-    # ssl_protocols TLSv1.2 TLSv1.3;
-    # ssl_ciphers HIGH:!aNULL:!MD5;
-
 }
 EOF
 
@@ -108,7 +109,6 @@ sudo ln -sf /etc/nginx/sites-available/rtmpserver /etc/nginx/sites-enabled/
 sudo mkdir -p /var/www/html/stream/hls
 sudo mkdir -p /var/www/html/stream/dash
 sudo mkdir -p /var/www/html/player
-sudo mkdir -p /var/www/certbot
 
 # firewall settings
 sudo ufw allow 22/tcp

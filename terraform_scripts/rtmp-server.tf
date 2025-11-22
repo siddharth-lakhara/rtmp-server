@@ -30,20 +30,20 @@ resource "digitalocean_droplet" "rtmp_server" {
     destination = "/tmp/hls_player.html"
   }
 
-  # provisioner "file" {
-  #   source      = "${path.module}/../cert/rtmp.slakhara.com/cert.pem"
-  #   destination = "/tmp/cert.pem"
-  # }
+  provisioner "file" {
+    source      = "${path.module}/../cert/${digitalocean_domain.rtmp_domain.name}/cert.pem"
+    destination = "/tmp/cert.pem"
+  }
 
-  # provisioner "file" {
-  #   source      = "${path.module}/../cert/rtmp.slakhara.com/privkey.pem"
-  #   destination = "/tmp/privkey.pem"
-  # }
+  provisioner "file" {
+    source      = "${path.module}/../cert/${digitalocean_domain.rtmp_domain.name}/privkey.pem"
+    destination = "/tmp/privkey.pem"
+  }
 
-  # provisioner "file" {
-  #   source      = "${path.module}/../cert/rtmp.slakhara.com/fullchain.pem"
-  #   destination = "/tmp/fullchain.pem"
-  # }
+  provisioner "file" {
+    source      = "${path.module}/../cert/${digitalocean_domain.rtmp_domain.name}/fullchain.pem"
+    destination = "/tmp/fullchain.pem"
+  }
 
   provisioner "remote-exec" {
     inline = [
