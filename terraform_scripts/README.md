@@ -1,6 +1,6 @@
 # RTMP Server Terraform Deployment
 
-This repository contains Terraform scripts to deploy an RTMP server on DigitalOcean with automated SSL certificate management.
+This repository contains Terraform scripts to deploy a fully functional RTMP server on DigitalOcean. Supports live streaming ingest via RTMP (e.g., from OBS), conversion to HLS (and DASH), with custom SSL certificates and a web player.
 
 ## Prerequisites
 
@@ -8,6 +8,7 @@ This repository contains Terraform scripts to deploy an RTMP server on DigitalOc
 2. DigitalOcean account with API token
 3. SSH key pair for server access
 4. Domain name configured to use DigitalOcean nameservers
+5. Custom SSL certificates generated for your domain in `cert/<domain>/` (cert.pem, privkey.pem, fullchain.pem)
 
 ## Configuration
 
@@ -17,7 +18,7 @@ Main configuration file for the infrastructure:
 - `region`: Deployment region (default: blr1)
 - `size`: Droplet size (default: s-1vcpu-1gb)
 - `image`: OS image (default: ubuntu-22-04-x64)
-- `domain`: Domain name for the RTMP server
+- `domain`: Domain name for the RTMP server (e.g., rtmp.slakhara.com)
 
 ### Environment Variables (.env)
 Sensitive configuration stored in `.env` file (excluded from version control):
@@ -38,44 +39,70 @@ The deployment creates the following resources:
 
 The `setup_script.sh` performs the following actions:
 1. Installs Nginx with RTMP module
-2. Configures RTMP streaming with HLS support
-3. Sets up firewall rules for RTMP (1935), HTTP (80), and HTTPS (443)
-4. Configures Let's Encrypt SSL certificate (commented out by default)
-5. Enables and starts Nginx service
+2. Copies custom SSL certificates to `/etc/nginx/ssl/`
+3. Configures RTMP server (port 1935, publish allowed from specific IP: 49.207.216.9)
+4. Enables HLS live streaming (`/var/www/html/stream/hls/`) and DASH (`/var/www/html/stream/dash/`)
+5. Sets up HTTPS server (443) with custom SSL, secure ciphers, HSTS; HTTP (80) redirects to HTTPS
+6. Serves HLS/DASH streams with CORS headers
+7. Deploys HLS player at `/show/hls/`
+8. Configures firewall (22, 1935, 80, 443)
+9. Starts and enables Nginx
 
 ## Usage
 
 1. Clone this repository
-2. Navigate to the terraform_scripts directory
-3. Copy the `.env.template` file to `.env` and update with your values:
+2. Navigate to the `terraform_scripts` directory
+3. Copy `.env.template` to `.env` and update:
    ```
    cp .env.template .env
    ```
-4. Update the `.env` file with your DigitalOcean token and SSH key paths
-5. Update `config.yaml` with your desired configuration
-5. Initialize Terraform:
+4. Edit `.env` with DigitalOcean token and SSH key paths
+5. Update `config.yaml` (domain, region, etc.)
+6. Initialize Terraform:
    ```
    terraform init
    ```
-
-6. Plan the infrastructure:
+7. Plan:
    ```
    terraform plan
    ```
-
-7. Apply the infrastructure:
+8. Apply:
    ```
    terraform apply
    ```
-
-8. To destroy the infrastructure:
+9. Destroy (if needed):
    ```
    terraform destroy
    ```
 
-## Security
+## Streaming
 
-- The `.env` file contains sensitive information and is excluded from version control via `.gitignore`
-- SSH key-based authentication is used for server access
-- Firewall rules restrict access to only necessary ports
-- Let's Encrypt SSL certificate support is included but commented out by default
+### Publish Stream (e.g., OBS)
+- Server: `rtmp://rtmp.slakhara.com/live`
+- Stream Key: `obs_stream` (or custom)
+- Full URL: `rtmp://rtmp.slakhara.com/live/obs_stream`
+
+### View Stream
+- Player: https://rtmp.slakhara.com/show/hls/hls_player.html?stream=obs_stream
+- Direct HLS: https://rtmp.slakhara.com/stream/hls/obs_stream.m3u8
+
+## Current Status
+- ✅ RTMP ingest (1935)
+- ✅ HLS live streaming + player
+- ✅ Custom SSL (HTTPS redirect)
+- ✅ CORS for streams
+- ✅ Firewall & security headers
+- ⏳ DASH streaming/player (dash_player.html available locally)
+
+## Security
+- Custom SSL certificates (pre-generated)
+- SSH key-based access only
+- UFW firewall (necessary ports only)
+- HSTS enabled
+- Publish restricted to specific IP
+- `.env` gitignored
+
+## Troubleshooting
+- Re-deploy: `terraform apply` (re-runs setup script)
+- Logs: `ssh root@<IP> tail -f /var/log/nginx/error.log`
+- Test config: `nginx -t`
